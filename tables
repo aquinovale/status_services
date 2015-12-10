@@ -1,0 +1,23 @@
+CREATE DATABASE heartbeatapp;
+
+\c heartbeatapp
+
+CREATE TABLE tb_company(id serial primary key, name varchar(200));
+
+CREATE TABLE tb_host(id_company int, host varchar(20), create_at timestamp default now());
+ALTER TABLE tb_host ADD CONSTRAINT pk_hosts PRIMARY KEY(id_company, host);
+ALTER TABLE tb_host ADD CONSTRAINT fk_host_company FOREIGN KEY (id_company) REFERENCES tb_company(id);
+
+CREATE TABLE tb_service(id serial primary key, name varchar(200));
+
+
+CREATE TABLE tb_support(id_company int, host varchar(20), id_service int, create_at timestamp default now());
+ALTER TABLE tb_support ADD CONSTRAINT pk_support PRIMARY KEY (id_company, host, id_service);
+ALTER TABLE tb_support ADD CONSTRAINT fk_support_host FOREIGN KEY (id_company, host) REFERENCES tb_host(id_company, host);
+ALTER TABLE tb_support ADD CONSTRAINT fk_support_service FOREIGN KEY (id_service) REFERENCES tb_service(id);
+
+CREATE TABLE tb_history(id_company int, host varchar(200), id_service int, id serial, create_at timestamp default now());
+ALTER TABLE tb_history ADD CONSTRAINT pk_history PRIMARY KEY (id_company, host, id_service, id);
+ALTER TABLE tb_history ADD CONSTRAINT fk_history_support FOREIGN KEY (id_company, host, id_service) REFERENCES tb_support(id_company, host, id_service);
+
+

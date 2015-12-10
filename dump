@@ -1,0 +1,7 @@
+\c heartbeatapp
+
+INSERT INTO tb_company(name) VALUES ('Ideal Invest');
+INSERT INTO tb_service(name) VALUES ('PostgreSQL');
+INSERT INTO tb_host(id_company, host) VALUES (1, 'ideal-invst-app-01');
+
+INSERT INTO tb_support(id_company, host, id_service) VALUES (1, 'ideal-invst-app-01', 1); 
