@@ -1,0 +1,13 @@
+CREATE VIEW vw_heartbeat AS SELECT c.name as company, h.host, s.name as service, ht.message, (now() - max(ht.dt_receive)) as atualizado, 
+CASE WHEN (now() - max(ht.dt_receive)) > interval '30 minutes' THEN true ELSE false END as disparar
+FROM tb_history ht
+        INNER JOIN
+        tb_host h
+                INNER JOIN
+                tb_company c
+                ON c.id = h.id_company
+        ON (h.id_company, h.host) = (ht.id_company, ht.host)
+        INNER JOIN
+        tb_service s
+        ON s.id = ht.id_service
+GROUP BY c.name, h.host, s.name, ht.message
