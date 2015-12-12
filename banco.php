@@ -10,7 +10,7 @@ function conectar($user, $password)
 
 function listar($userDB, $passwordDB ) 
 {
-	$consulta = "SELECT * FROM vw_heartbeat;";
+	$consulta = "SELECT * FROM vw_heartbeat WHERE disparar = true LIMIT 1;";
 	$conn = conectar($userDB, $passwordDB);
 	$query = $conn->query($consulta);
 	if(isset($fetch)){

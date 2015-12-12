@@ -6,4 +6,5 @@
 ##########
 
 HOST=$(hostname)
-psql -t -c "select '$HOST', 'postgresql', now()::date, now()::time" postgres
+#psql -t -c "select '$HOST', 'postgresql', now()::date, now()::time" postgres
+psql -t -c "select '$HOST', 'postgresql', now()" postgres
