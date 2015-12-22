@@ -6,10 +6,12 @@
 # Usado pela Heartbeat APP
 ##########################
 
-DIR=$1
+DIR=/tmp/dados
 
 for arq in $(ls $DIR); 
 do
+	ARQ=$(cat $DIR/$arq)
+ 
 	while read line 
 	do  
 		COMPANY=$(echo $line | cut -f1 -d'|')
@@ -19,9 +21,7 @@ do
 		DT_RECEIVE=$(echo $line | cut -f5 -d'|')
 		if [ -n "$HOST" ]
 		then
-			INSERT="INSERT INTO tb_history(id_company, host, id_service, message, dt_receive) VALUES ($COMPANY, trim('$HOST'), $SERVICE, trim('$MESSAGE'), '$DT_RECEIVE');"
-			# echo -e $INSERT
-			psql -c "$INSERT"  heartbeatapp
+			echo "INSERT INTO tb_history(id_company, host, id_service, message, dt_receive) VALUES ($COMPANY, '$HOST', $SERVICE, $MESSAGE, $DT_RECEIVE);" # heartbeatapp
 		fi
-	done < $DIR/$arq
+	done < $ARQ
 done
