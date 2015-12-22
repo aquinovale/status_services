@@ -1,9 +1,370 @@
-\c heartbeatapp
+--
+-- PostgreSQL database dump
+--
 
-INSERT INTO tb_company(name) VALUES ('Ideal Invest');
-INSERT INTO tb_service(name) VALUES ('PostgreSQL');
-INSERT INTO tb_host(id_company, host) VALUES (1, 'ideal-invst-app-01');
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
 
-INSERT INTO tb_support(id_company, host, id_service) VALUES (1, 'ideal-invst-app-01', 1); 
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
 
-INSERT INTO tb_history(id_company, host, id_service, message, dt_receive) VALUES (1, 'ideal-invst-app-01', 1, 'running', now()); 
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: tb_company; Type: TABLE; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+CREATE TABLE tb_company (
+    id integer NOT NULL,
+    name character varying(200)
+);
+
+
+ALTER TABLE tb_company OWNER TO vinicius;
+
+--
+-- Name: tb_company_id_seq; Type: SEQUENCE; Schema: public; Owner: vinicius
+--
+
+CREATE SEQUENCE tb_company_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tb_company_id_seq OWNER TO vinicius;
+
+--
+-- Name: tb_company_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vinicius
+--
+
+ALTER SEQUENCE tb_company_id_seq OWNED BY tb_company.id;
+
+
+--
+-- Name: tb_history; Type: TABLE; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+CREATE TABLE tb_history (
+    id_company integer NOT NULL,
+    host character varying(200) NOT NULL,
+    id_service integer NOT NULL,
+    id integer NOT NULL,
+    message character varying(200) NOT NULL,
+    dt_receive timestamp without time zone NOT NULL,
+    create_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE tb_history OWNER TO vinicius;
+
+--
+-- Name: tb_history_id_seq; Type: SEQUENCE; Schema: public; Owner: vinicius
+--
+
+CREATE SEQUENCE tb_history_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tb_history_id_seq OWNER TO vinicius;
+
+--
+-- Name: tb_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vinicius
+--
+
+ALTER SEQUENCE tb_history_id_seq OWNED BY tb_history.id;
+
+
+--
+-- Name: tb_host; Type: TABLE; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+CREATE TABLE tb_host (
+    id_company integer NOT NULL,
+    host character varying(20) NOT NULL,
+    create_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE tb_host OWNER TO vinicius;
+
+--
+-- Name: tb_service; Type: TABLE; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+CREATE TABLE tb_service (
+    id integer NOT NULL,
+    name character varying(200)
+);
+
+
+ALTER TABLE tb_service OWNER TO vinicius;
+
+--
+-- Name: tb_service_id_seq; Type: SEQUENCE; Schema: public; Owner: vinicius
+--
+
+CREATE SEQUENCE tb_service_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE tb_service_id_seq OWNER TO vinicius;
+
+--
+-- Name: tb_service_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vinicius
+--
+
+ALTER SEQUENCE tb_service_id_seq OWNED BY tb_service.id;
+
+
+--
+-- Name: tb_support; Type: TABLE; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+CREATE TABLE tb_support (
+    id_company integer NOT NULL,
+    host character varying(20) NOT NULL,
+    id_service integer NOT NULL,
+    criticidade integer DEFAULT 1,
+    create_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE tb_support OWNER TO vinicius;
+
+--
+-- Name: vw_heartbeat; Type: VIEW; Schema: public; Owner: vinicius
+--
+
+CREATE VIEW vw_heartbeat AS
+ SELECT true AS re,
+    c.name AS company,
+    h.host,
+    s.name AS service,
+        CASE su.criticidade
+            WHEN 1 THEN true
+            ELSE false
+        END AS critico,
+    ht.message,
+    (now() - (max(ht.dt_receive))::timestamp with time zone) AS atualizado,
+        CASE
+            WHEN ((now() - (max(ht.dt_receive))::timestamp with time zone) > '00:30:00'::interval) THEN true
+            ELSE false
+        END AS disparar
+   FROM (tb_history ht
+     JOIN ((tb_support su
+     JOIN (tb_host h
+     JOIN tb_company c ON ((c.id = h.id_company))) ON (((h.id_company = su.id_company) AND ((h.host)::text = (su.host)::text))))
+     JOIN tb_service s ON ((s.id = su.id_service))) ON (((ht.id_company = su.id_company) AND ((ht.host)::text = (su.host)::text) AND (ht.id_service = su.id_service))))
+  GROUP BY c.name, h.host, s.name, su.criticidade, ht.message;
+
+
+ALTER TABLE vw_heartbeat OWNER TO vinicius;
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_company ALTER COLUMN id SET DEFAULT nextval('tb_company_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_history ALTER COLUMN id SET DEFAULT nextval('tb_history_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_service ALTER COLUMN id SET DEFAULT nextval('tb_service_id_seq'::regclass);
+
+
+--
+-- Data for Name: tb_company; Type: TABLE DATA; Schema: public; Owner: vinicius
+--
+
+COPY tb_company (id, name) FROM stdin;
+1	Ideal Invest
+2	Vale Consultoria
+\.
+
+
+--
+-- Name: tb_company_id_seq; Type: SEQUENCE SET; Schema: public; Owner: vinicius
+--
+
+SELECT pg_catalog.setval('tb_company_id_seq', 2, true);
+
+
+--
+-- Data for Name: tb_history; Type: TABLE DATA; Schema: public; Owner: vinicius
+--
+
+COPY tb_history (id_company, host, id_service, id, message, dt_receive, create_at) FROM stdin;
+1	ideal-invst-app-01	1	2	running	2015-12-12 19:30:36.989031	2015-12-12 20:30:13.223505
+\.
+
+
+--
+-- Name: tb_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: vinicius
+--
+
+SELECT pg_catalog.setval('tb_history_id_seq', 2, true);
+
+
+--
+-- Data for Name: tb_host; Type: TABLE DATA; Schema: public; Owner: vinicius
+--
+
+COPY tb_host (id_company, host, create_at) FROM stdin;
+1	ideal-invst-app-01	2015-12-12 01:20:34.205213
+2	vale-consultoria	2015-12-22 20:52:37.63713
+\.
+
+
+--
+-- Data for Name: tb_service; Type: TABLE DATA; Schema: public; Owner: vinicius
+--
+
+COPY tb_service (id, name) FROM stdin;
+1	PostgreSQL
+2	Web
+\.
+
+
+--
+-- Name: tb_service_id_seq; Type: SEQUENCE SET; Schema: public; Owner: vinicius
+--
+
+SELECT pg_catalog.setval('tb_service_id_seq', 2, true);
+
+
+--
+-- Data for Name: tb_support; Type: TABLE DATA; Schema: public; Owner: vinicius
+--
+
+COPY tb_support (id_company, host, id_service, criticidade, create_at) FROM stdin;
+1	ideal-invst-app-01	1	1	2015-12-12 01:20:34.20747
+2	vale-consultoria	1	1	2015-12-22 20:56:04.879104
+2	vale-consultoria	2	2	2015-12-22 20:56:33.788373
+\.
+
+
+--
+-- Name: pk_history; Type: CONSTRAINT; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+ALTER TABLE ONLY tb_history
+    ADD CONSTRAINT pk_history PRIMARY KEY (id_company, host, id_service, id);
+
+
+--
+-- Name: pk_hosts; Type: CONSTRAINT; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+ALTER TABLE ONLY tb_host
+    ADD CONSTRAINT pk_hosts PRIMARY KEY (id_company, host);
+
+
+--
+-- Name: pk_support; Type: CONSTRAINT; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+ALTER TABLE ONLY tb_support
+    ADD CONSTRAINT pk_support PRIMARY KEY (id_company, host, id_service);
+
+
+--
+-- Name: tb_company_pkey; Type: CONSTRAINT; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+ALTER TABLE ONLY tb_company
+    ADD CONSTRAINT tb_company_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tb_service_pkey; Type: CONSTRAINT; Schema: public; Owner: vinicius; Tablespace: 
+--
+
+ALTER TABLE ONLY tb_service
+    ADD CONSTRAINT tb_service_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fk_history_support; Type: FK CONSTRAINT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_history
+    ADD CONSTRAINT fk_history_support FOREIGN KEY (id_company, host, id_service) REFERENCES tb_support(id_company, host, id_service);
+
+
+--
+-- Name: fk_host_company; Type: FK CONSTRAINT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_host
+    ADD CONSTRAINT fk_host_company FOREIGN KEY (id_company) REFERENCES tb_company(id);
+
+
+--
+-- Name: fk_support_host; Type: FK CONSTRAINT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_support
+    ADD CONSTRAINT fk_support_host FOREIGN KEY (id_company, host) REFERENCES tb_host(id_company, host);
+
+
+--
+-- Name: fk_support_service; Type: FK CONSTRAINT; Schema: public; Owner: vinicius
+--
+
+ALTER TABLE ONLY tb_support
+    ADD CONSTRAINT fk_support_service FOREIGN KEY (id_service) REFERENCES tb_service(id);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
