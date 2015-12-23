@@ -5,7 +5,24 @@
 # Pega informação de status do postgres
 ##########
 COMPANY=2 ## Codigo empresa
-SERVICE=1 ## Codigo serviço
+WEB="valeconsultoriati.com" 
 
 HOST=$(hostname)
-psql -t -c "select $COMPANY, '$HOST', $SERVICE, 'running', now()" postgres
+if [ "$1" = "postgresql" ]
+then
+	SERVICE=1 ## Codigo postgres
+	psql -t -c "select $COMPANY, '$HOST', $SERVICE, 'running', now()" postgres
+elif [ "$1" = "mysql" ]
+then
+	SERVICE=2 ## Codigo mysql
+	mysql -e "select $COMPANY, '$HOST', $SERVICE, 'running', now()" --skip-column-names 
+else
+	SERVICE=3 ## Codigo web
+	WEB_RESULT=$(curl -X POST $WEB | grep -o "$WEB" | sort | uniq)
+
+	if [ "$WEB" = "$WEB_RESULT" ] 
+	then
+		echo -e "$COMPANY | $HOST | $SERVICE | running | $(date '+%Y/%m/%d %H:%M:%S')"
+
+	fi
+fi
