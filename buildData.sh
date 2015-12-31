@@ -6,8 +6,7 @@
 # Usado pela Heartbeat APP
 ##########################
 
-DIR=$1
-
+DIR=/home/ubuntu/status_services/arqs/
 for arq in $(ls $DIR); 
 do
 	while read line 
