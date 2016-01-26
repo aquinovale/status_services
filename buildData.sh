@@ -7,6 +7,10 @@
 ##########################
 
 DIR=/home/ubuntu/status_services/arqs/
+
+echo '' > /tmp/buildData.log
+echo 'Inicia' > /tmp/buildData.log
+
 for arq in $(ls $DIR); 
 do
 	while read line 
@@ -19,8 +23,8 @@ do
 		if [ -n "$HOST" ]
 		then
 			INSERT="INSERT INTO tb_history(id_company, host, id_service, message, dt_receive) VALUES ($COMPANY, trim('$HOST'), $SERVICE, trim('$MESSAGE'), '$DT_RECEIVE');"
-			# echo -e $INSERT
-			psql -c "$INSERT"  heartbeatapp
+			echo -e $INSERT >> /tmp/buildData.log
+			psql -c "$INSERT"  heartbeatapp >> /tmp/buildData.log
 		fi
 	done < $DIR/$arq
 done
